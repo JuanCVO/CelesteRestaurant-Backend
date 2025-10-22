@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const client_1 = __importDefault(require("@/prisma/client"));
+const client_1 = __importDefault(require("../prisma/client"));
 const router = (0, express_1.Router)();
 router.get("/", async (req, res) => {
     try {
