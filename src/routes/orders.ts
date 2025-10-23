@@ -280,7 +280,6 @@ router.post("/cierre-dia", async (_req, res) => {
     res.status(500).json({ error: "Error al generar cierre diario" });
   }
 });
-
 router.get("/cierres", async (_req, res) => {
   try {
     const cierres = await prisma.cierreDiario.findMany({
