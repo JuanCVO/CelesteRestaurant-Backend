@@ -217,13 +217,26 @@ router.delete("/:id", async (req, res) => {
 
 router.post("/cierre-dia", async (_req, res) => {
   try {
-    // Fecha actual (inicio y fin del día)
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // Obtener pedidos cerrados del día
+    // ✅ Verificar si ya existe un cierre de hoy
+    const cierreExistente = await prisma.cierreDiario.findFirst({
+      where: {
+        fecha: {
+          gte: start,
+          lte: end,
+        },
+      },
+    });
+
+    if (cierreExistente) {
+      return res.status(400).json({ error: "⚠️ El cierre de hoy ya fue realizado." });
+    }
+
+    // 🧾 Buscar pedidos cerrados del día
     const pedidosCerrados = await prisma.pedido.findMany({
       where: {
         isClosed: true,
@@ -238,17 +251,11 @@ router.post("/cierre-dia", async (_req, res) => {
       return res.status(400).json({ error: "No hay pedidos cerrados hoy." });
     }
 
-    // Calcular totales
-    const totalVentas = pedidosCerrados.reduce(
-      (sum, p) => sum + Number(p.total),
-      0
-    );
-    const totalPropinas = pedidosCerrados.reduce(
-      (sum, p) => sum + (p.tip ? Number(p.tip) : 0),
-      0
-    );
+    // 💰 Calcular totales
+    const totalVentas = pedidosCerrados.reduce((sum, p) => sum + Number(p.total), 0);
+    const totalPropinas = pedidosCerrados.reduce((sum, p) => sum + (p.tip ? Number(p.tip) : 0), 0);
 
-    // Guardar en la base de datos
+    // 💾 Guardar cierre del día
     const cierre = await prisma.cierreDiario.create({
       data: {
         totalVentas,
@@ -257,7 +264,10 @@ router.post("/cierre-dia", async (_req, res) => {
       },
     });
 
-    res.json(cierre);
+    res.json({
+      message: "✅ Cierre del día guardado correctamente.",
+      cierre,
+    });
   } catch (error) {
     console.error("❌ Error al generar cierre diario:", error);
     res.status(500).json({ error: "Error al generar cierre diario" });
