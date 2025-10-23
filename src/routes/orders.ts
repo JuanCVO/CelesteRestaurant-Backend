@@ -171,7 +171,7 @@ router.patch("/:id/close", async (req, res) => {
       data: {
         isClosed: true,
         tip: tipValue,
-        total: pedido.total.toNumber() + tipValue,
+        total: pedido.total.toNumber(),
       },
       include: { items: { include: { product: true } } },
     });
@@ -261,6 +261,17 @@ router.post("/cierre-dia", async (_req, res) => {
   } catch (error) {
     console.error("❌ Error al generar cierre diario:", error);
     res.status(500).json({ error: "Error al generar cierre diario" });
+  }
+});
+router.get("/cierres", async (_req, res) => {
+  try {
+    const cierres = await prisma.cierreDiario.findMany({
+      orderBy: { fecha: "desc" },
+    });
+    res.json(cierres);
+  } catch (error) {
+    console.error("❌ Error al obtener cierres:", error);
+    res.status(500).json({ error: "Error al obtener cierres diarios" });
   }
 });
 
