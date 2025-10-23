@@ -217,12 +217,13 @@ router.delete("/:id", async (req, res) => {
 
 router.post("/cierre-dia", async (_req, res) => {
   try {
+    // 📆 Definir el rango del día actual
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // ✅ Verificar si ya existe un cierre de hoy
+    // ✅ Verificar si ya existe un cierre del día
     const cierreExistente = await prisma.cierreDiario.findFirst({
       where: {
         fecha: {
@@ -236,7 +237,7 @@ router.post("/cierre-dia", async (_req, res) => {
       return res.status(400).json({ error: "⚠️ El cierre de hoy ya fue realizado." });
     }
 
-    // 🧾 Buscar pedidos cerrados del día
+    // 🧾 Obtener todos los pedidos cerrados de hoy
     const pedidosCerrados = await prisma.pedido.findMany({
       where: {
         isClosed: true,
@@ -252,10 +253,10 @@ router.post("/cierre-dia", async (_req, res) => {
     }
 
     // 💰 Calcular totales
-    const totalVentas = pedidosCerrados.reduce((sum, p) => sum + Number(p.total), 0);
-    const totalPropinas = pedidosCerrados.reduce((sum, p) => sum + (p.tip ? Number(p.tip) : 0), 0);
+    const totalVentas = pedidosCerrados.reduce((sum, p) => sum + Number(p.total || 0), 0);
+    const totalPropinas = pedidosCerrados.reduce((sum, p) => sum + Number(p.tip || 0), 0);
 
-    // 💾 Guardar cierre del día
+    // 💾 Crear cierre del día
     const cierre = await prisma.cierreDiario.create({
       data: {
         totalVentas,
@@ -264,15 +265,22 @@ router.post("/cierre-dia", async (_req, res) => {
       },
     });
 
+    // ✅ Responder con los datos formateados
     res.json({
       message: "✅ Cierre del día guardado correctamente.",
-      cierre,
+      cierre: {
+        ...cierre,
+        fecha: cierre.fecha.toISOString().split("T")[0], // 👉 solo YYYY-MM-DD
+        totalVentas: Number(cierre.totalVentas),
+        totalPropinas: Number(cierre.totalPropinas),
+      },
     });
   } catch (error) {
     console.error("❌ Error al generar cierre diario:", error);
     res.status(500).json({ error: "Error al generar cierre diario" });
   }
 });
+
 router.get("/cierres", async (_req, res) => {
   try {
     const cierres = await prisma.cierreDiario.findMany({
