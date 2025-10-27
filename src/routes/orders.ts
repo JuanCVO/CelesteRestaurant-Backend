@@ -3,7 +3,7 @@ import prisma from "../prisma/client";
 
 const router = Router();
 
-// 🧾 Crear nuevo pedido (queda abierto)
+
 router.post("/", async (req, res) => {
   try {
     const { table, items } = req.body;
@@ -12,12 +12,11 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Datos inválidos para crear pedido" });
     }
 
-    // Obtener productos
     const products = await prisma.product.findMany({
       where: { id: { in: items.map((i: any) => i.productId) } },
     });
 
-    // Validar stock disponible
+    
     for (const i of items) {
       const product = products.find((p) => p.id === i.productId);
       if (!product) {
@@ -30,14 +29,12 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // Calcular total
     const total = items.reduce((sum: number, i: any) => {
       const product = products.find((p) => p.id === i.productId);
       const price = product?.price ? Number(product.price) : 0;
       return sum + price * i.quantity;
     }, 0);
 
-    // Crear pedido
     const pedido = await prisma.pedido.create({
       data: {
         table,
@@ -58,7 +55,6 @@ router.post("/", async (req, res) => {
       include: { items: { include: { product: true } } },
     });
 
-    // Restar stock
     for (const i of items) {
       const product = products.find((p) => p.id === i.productId);
       if (product) {
@@ -77,7 +73,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 📋 Listar pedidos
+
 router.get("/", async (_req, res) => {
   try {
     const pedidos = await prisma.pedido.findMany({
@@ -91,7 +87,6 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// ➕ Agregar productos a un pedido abierto
 router.patch("/:id/add-item", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -140,7 +135,7 @@ router.patch("/:id/add-item", async (req, res) => {
       });
     }
 
-    // Actualizar total
+   
     const updated = await prisma.pedido.update({
       where: { id },
       data: { total: pedido.total.toNumber() + totalExtra },
@@ -154,7 +149,7 @@ router.patch("/:id/add-item", async (req, res) => {
   }
 });
 
-// 💰 Cerrar pedido con propina
+
 router.patch("/:id/close", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -183,7 +178,7 @@ router.patch("/:id/close", async (req, res) => {
   }
 });
 
-// 🗑️ Eliminar pedido (y restaurar stock)
+
 router.delete("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -217,13 +212,13 @@ router.delete("/:id", async (req, res) => {
 
 router.post("/cierre-dia", async (_req, res) => {
   try {
-    // 📆 Definir el rango del día actual
+    
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // ✅ Verificar si ya existe un cierre del día
+    
     const cierreExistente = await prisma.cierreDiario.findFirst({
       where: {
         fecha: {
@@ -237,7 +232,7 @@ router.post("/cierre-dia", async (_req, res) => {
       return res.status(400).json({ error: "⚠️ El cierre de hoy ya fue realizado." });
     }
 
-    // 🧾 Obtener todos los pedidos cerrados de hoy
+    
     const pedidosCerrados = await prisma.pedido.findMany({
       where: {
         isClosed: true,
@@ -252,11 +247,11 @@ router.post("/cierre-dia", async (_req, res) => {
       return res.status(400).json({ error: "No hay pedidos cerrados hoy." });
     }
 
-    // 💰 Calcular totales
+    
     const totalVentas = pedidosCerrados.reduce((sum, p) => sum + Number(p.total || 0), 0);
     const totalPropinas = pedidosCerrados.reduce((sum, p) => sum + Number(p.tip || 0), 0);
 
-    // 💾 Crear cierre del día
+    
     const cierre = await prisma.cierreDiario.create({
       data: {
         totalVentas,
@@ -265,12 +260,12 @@ router.post("/cierre-dia", async (_req, res) => {
       },
     });
 
-    // ✅ Responder con los datos formateados
+  
     res.json({
       message: "✅ Cierre del día guardado correctamente.",
       cierre: {
         ...cierre,
-        fecha: cierre.fecha.toISOString().split("T")[0], // 👉 solo YYYY-MM-DD
+        fecha: cierre.fecha.toISOString().split("T")[0], 
         totalVentas: Number(cierre.totalVentas),
         totalPropinas: Number(cierre.totalPropinas),
       },
