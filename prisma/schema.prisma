@@ -63,10 +63,25 @@ model User {
   password  String
   role      Role     @default(MESERO)
   createdAt DateTime @default(now())
+  pagos     PagoEmpleado[]
 }
+
+model PagoEmpleado {
+  id          Int      @id @default(autoincrement())
+  empleadoId  Int
+  monto       Decimal  @db.Decimal(10, 2)
+  fechaPago   DateTime @default(now())
+  descripcion String?  // opcional, para registrar por qué se le pagó
+  empleado    User     @relation(fields: [empleadoId], references: [id])
+
+  @@map("pagos_empleados")
+}
+
 
 enum Role {
   ADMIN
   MESERO
+  COCINA
+  PARRILLERO
 }
 

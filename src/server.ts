@@ -7,6 +7,7 @@ import salesRouter from "./routes/sales";
 import ordersRouter from "./routes/orders";
 import authRouter from "./routes/auth";
 import { authMiddleware, adminOnly, adminOrMesero } from "./middleware/auth";
+import pagosRoutes from "./routes/pagos.routes";
 
 dotenv.config();
 const app = express();
@@ -24,9 +25,10 @@ app.use("/api/products/public", productsRouter);
 app.use("/api/products", authMiddleware, adminOnly, productsRouter); 
 app.use("/api/orders", authMiddleware, ordersRouter); 
 app.use("/api/sales", authMiddleware, adminOnly, salesRouter);
+app.use("/api/pagos", pagosRoutes);
 
 
-app.get("/", (_req, res) => res.send("✅ API Celeste funcionando correctamente."));
+app.get("/", (_req, res) => res.send("API Celeste funcionando correctamente."));
 
 
 setInterval(async () => {
