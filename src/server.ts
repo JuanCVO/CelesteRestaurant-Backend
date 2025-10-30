@@ -14,6 +14,27 @@ const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:3000", // para desarrollo local
+  "https://celesterestaurant-frontend.onrender.com" // tu dominio en producción
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS no permitido"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
